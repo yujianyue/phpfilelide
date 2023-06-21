@@ -1,7 +1,7 @@
 <?php
 include "./inc/conn.php";
 foreach ($pubs as $ti=>$val) $$ti = $val; //调用
-//作者联系方式: 15058593138@qq.com (手机号可加微)
+
 $daynow = date("Y-m-d");
 $shinow = date("H:i:s");
 $fire = (isset($_GET['cx']))?addslashes($_GET['cx']):'';
@@ -50,8 +50,9 @@ $sqlu = "INSERT IGNORE INTO `{$dbbiao}` ($tis) VALUES ({$vals})";
 $resu = mysqli_query($conn, $sqlu);
 if (!$resu){ $ersms = mysqli_error($conn); echo "上传入库失败!".$ersms;}
 $sz = []; //以下网址1/2自己2选1
-$sz['下载网址1'] = $ihosts."".$sx["filedoma"];
-$sz['下载网址2'] = $ihosts."?cx=".$sx["filedoma"];
+if($moshi==3) $sz['下载网址'] = $ihosts."?cx=".$sx["filedoma"];
+if($moshi==2) $sz['下载网址'] = $ihosts."".$sx["filedoma"];
+if($moshi==1) $sz['下载网址'] = rtrim($ihosts,"/").ltrim($sx["filepath"],".");
 $sz['下载密码'] = $filemama;
 $sz['文件名称'] = $sx["filename"];
 foreach($sz as $ti=>$val){ echo "<p>{$ti} -> <b>$val</b></p>";}
@@ -181,9 +182,10 @@ $ihtml = date("Ymd");
    mask.style.display = 'none';
    dialog.style.display = 'none';
   }
-  function dufile(){
-   $('content').innerHTML = '开始上传...';
-   $('buts').innerHTML = $('downy').innerHTML;
+  function dufile(txt,ids){
+   $('content').innerHTML = txt;
+   if(ids == "") $('buts').innerHTML = "";
+   if(ids != "") $('buts').innerHTML = $(ids).innerHTML;
    showDialog();
   }
   function dofile(){
@@ -229,15 +231,13 @@ xhr.open('POST','./?act=do',true);
 xhr.send(fd);
 }
 function selfile(id){
-var file = $('file'+id).files[0]; dufile();
-if(!file){  $('content').innerHTML = '<h3>未上传：</h3>请先选择文件'; return false;}
-console.log(file.name);
+var file = $('file'+id).files[0]; dufile('开始上传...','');
+if(!file){  dufile('<h3>未上传：</h3>请先选择文件','downy'); return false;}
 if (!/(<?php echo $isupx; ?>)$/.test(file.name)){
-$('content').innerHTML += "<h3>未上传</h3>仅支持后缀格式（<?php echo $isupi;?>）!";
- return false;
+dufile('<h3>未上传</h3>仅支持后缀格式（<?php echo $isupi;?>）!','downy'); return false;
 }
 if (file.size > <?php echo $lenxi;?> * 1024) {
-$("content").innerHTML += "<h3>未上传</h3>文件大小("+parseInt(file.size /1024)+")KB超<?php echo $lenxi;?>kB限制!"; return false;
+dufile('<h3>未上传</h3>文件大小超<?php echo $lenxi;?>kB限制!','downy'); return false;
 }
 var fd = new FormData();
 fd.append('file',file); 
@@ -245,19 +245,19 @@ fd.append('id',$('id').value); fd.append('tp',$('tp').value);
 var xhr = new XMLHttpRequest();
 xhr.onreadystatechange = function(){
 if(xhr.readyState == 4){
-if(xhr.status == 200){ $('content').innerHTML=xhr.responseText; }
+if(xhr.status == 200){ dufile(xhr.responseText,'downy'); }
 }
 };
 xhr.onloadstart = function(){ console.log("开始上传"); };
 xhr.onloadend = function(){ console.log("上传结束"); };
-xhr.ontimeout = function(){ console.log("上传超时"); };
-xhr.onerror = function(){ console.log("上传失败"); };
-xhr.onload = function(){ console.log("上传完成"); };
+xhr.ontimeout = function(){ dufile('上传超时!',''); };
+xhr.onerror = function(){ dufile('上传失败!',''); };
+xhr.onload = function(){ };
 xhr.open('POST','./?act=up',true);
 xhr.upload.onprogress = function(ev){
 if(ev.lengthComputable){
 var percent = 100 * ev.loaded/ev.total;//计算上传的百分比
-console.log("进度:", percent+'%');//更改上传进度
+ dufile('进度:'+percent.toFixed(2)+'%','');
  }
 }
 xhr.send(fd);
@@ -269,6 +269,5 @@ echo "\r\n\r\n$(\"dxia\").click();\r\n";
 }
 ?>
 </script>
-<!-- 作者联系方式: 15058593138@qq.com (手机号可加微) -->
  </body>
 </html>
