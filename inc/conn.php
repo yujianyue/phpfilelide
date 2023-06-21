@@ -1,22 +1,25 @@
 <?php
-//error_reporting(0); //打开报错:去行首双斜杠
+//error_reporting(0); //关闭报错:去行首双斜杠
 
 /*
-保留版权信息前提下可以二次分享、商用、二开
-作者联系方式: 15058593138@qq.com (手机号可加微)
+admin.php 可以自由修改文件名以达更安全目的,管理页面网址同步变化
+首次使用修改数据库配置信息及账号密码,运行install.php写库
+管理权限登录：搜索框输入操作密码
+https://github.com/yujianyue/phpfilelide
+https://gitee.com/weivote/phpfilelide
 */
 
 $pubs = array();
 $pubs["dbhost"] = "localhost";		//数据库地址本地localhost
 $pubs["dbuser"] = "file_chalide_cn";	//数据库账号
-$pubs["dbpass"] = "TnaadfhzmSj887MPi";	//数据库密码
+$pubs["dbpass"] = "TnawJhedSj887MPi";	//数据库密码
 $pubs["dbname"] = "file_chalide_cn";	//数据库名称
 $pubs["dbport"] = "3306";		//数据库端口号
 $pubs["dbcode"] = "UTF8";		//数据库编码  UTF8 GB2312
 $pubs["dbbiao"] = "chalide_share";	//数据表
 
 $zhanname = "个人自用文件上传分享系统";
-$pasx="chalidemima"; //admin.php操作密码(搜索框输入)
+$pasx="chalidecom"; //admin.php操作密码(搜索框输入)
 
 $tp=[];
 $tp["filedoma"]="个性域名";
@@ -31,9 +34,13 @@ $tp["timeupup"]="上传时间";
 
 
 $isupi = ".jpg,.png,.zip,.rar";		//demo:.jpg,.png 逗号隔开
-$lenxi = "4096";			//单位kb,demo:1024
-$imgdir= "./data/";			//建议只改英文部分data为你的存放文件夹名称,检查读写权限
+$lenxi = "40960";			//单位kb,demo:1024
+$imgdir= "./datar/";			//建议只改英文部分datar为你的存放文件夹名称,检查读写权限
 $iback = "filedoma-filename-timeupup-filemama"; //
+$moshi = "1"; //参考一下三点；1/2/3三选一
+//1:路径模式(别设置防下载);参考：http://file.chalide.cn/datar/202306/20230617_648cfc45ae856.png
+//2:伪静态模式(设置过伪静态有效);参考：http://file.chalide.cn/20230617_648cfc45ae856.png
+//3:网址传递模式;参考：http://file.chalide.cn/?cx=20230617_648cfc45ae856.png
 
 $iport = $_SERVER['SERVER_PORT'];
 $indes = $_SERVER['SCRIPT_NAME'];
