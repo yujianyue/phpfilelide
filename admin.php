@@ -11,12 +11,34 @@ $b = array();
 $b[$dbbiao]["name"]= "查询列表";
 $b[$dbbiao]["id"] = "id"; //ID唯一自增字段
 $b[$dbbiao]["duan"]= "filedoma,filename,filesize,filepath,fileipip,chacheck,timeupup";
-$b[$dbbiao]["bgai"]= "filedoma,filemimi,filesize,filepath,fileipip,timeupup"; //不改
+$b[$dbbiao]["bgai"]= "filemimi,filesize,filepath,fileipip,timeupup"; //不改
 $b[$dbbiao]["sox"] = "filedoma,filename";
+
+$c[$dbbiao]["chacheck"] = "0`不可下载|1`默认状态|2`可以下载";
 
 $biao = (isset($_GET['biao']))?addslashes($_GET['biao']):$dbbiao;
 $acts = (isset($_GET['Act']))?addslashes($_GET['Act']):"";
 
+function doxuan($tdb,$mname,$mvals){
+if(!stristr($tdb,"`") || !stristr($tdb,"|")) return "<option value=\"\">无效参数</option>";
+$t1db = explode("|",$tdb);
+$dox="<select name=\"$mname\" id=\"$mname\" class=\"txtu\">\r\n";
+foreach($t1db as $t2db){
+if(stristr($t2db,"`")){
+$t3db = explode("`",$t2db); $t4d = $t3db[0]; $t5d = $t3db[1];
+if("s".$mvals=="s".$t4d){$sled = " selected";}else{$sled = "";}
+$dox.="<option value=\"{$t4d}\"{$sled}>[{$t4d}]$t5d</option>\r\n";
+}
+}
+return $dox."</select>\r\n";
+}
+function readbiao($biao,$idas,$ids){
+$conn = cenn();
+$sqlc = "select * from `{$biao}` Where `$idas`='{$ids}' LIMIT 1";
+$resu = mysqli_query($conn, $sqlc);
+while($row = mysqli_fetch_assoc($resu)){ return $row;}
+return null;
+}
 if($acts != ""){
 $idas = $b[$dbbiao]["id"]; $bgai = $b[$dbbiao]["bgai"];
 $biao = (isset($_POST['biao']))?addslashes($_POST['biao']):$dbbiao;
@@ -29,11 +51,13 @@ if(!stristr("--","-$acts-")){ //不需要密码操作判断
 $pasword = (isset($_COOKIE["limi"]))?addslashes($_COOKIE["limi"]):'';
 if("^$search^" == "^$pasx^"){
  setcookie('limi',md5("^$domas@$pasx@$domas^"),time()+60*60*24*1,"/"); 
+ header('x-power-id: shua');
  exit("鉴权成功:可以继续输入查询了!");
 }elseif(md5("^$domas@$pasx@$domas^") != $pasword){
- exit("请先登录(搜索框输入密码后搜索)!");
+ exit("请先登录(右上角进入)!");
 }elseif("^$search^" == "^logout^"){
  setcookie('limi',md5("^$domas@$ttam@$domas^"),-time()+60*60*24*1,"/"); 
+ header('x-power-id: shua');
  exit("退出成功!");
 }elseif("^$search^" == "^^"){
  //exit("请输入关键词!");
@@ -50,6 +74,7 @@ $resu = mysqli_query($conn, $sqlc);
 while($info = mysqli_fetch_assoc($resu)){ $infe = $info;}
 if($infe=="") exit("读取ID{$id}信息失败");
 echo "<!--tips--><table cellspacing=\"0\" class=\"taba\">";
+    echo "<caption><input name=\"S\" type=\"submit\" value=\"刷新\" onclick=\"more($ider,'more');\"></caption>";
 $jjj=0;
 foreach($infe as $ti=>$zi){
 $mu = $ti; $jjj++; $ii = $infe[$idas]; $ix = $infe[$idas]."_".$jjj;
@@ -83,13 +108,14 @@ if(stristr("@$ti","@oval")) $oval = addslashes($val); //旧内容
 if(stristr("@$ti","@nval")) $nval = addslashes($val); //新内容内容
 }
 if($oval == $nval){exit("未修改，两次值未变化! ");}
-if(stristr(",$idas,$bgai,",",{$duan},")){ exit("该字段不可修改!");}
+if(stristr(",$idas,$bgai,",",{$duan},")){ exit("该字段不可修改($bgai)!");}
 $sqlc = "UPDATE `$biao` SET `$duan`='{$nval}' WHERE `$idas`={$idid}";
 $conn = cenn();
 $resu = mysqli_query($conn, $sqlc);
 if (!$resu){
 echo "更新失败：".mysqli_error($conn);
 }else{
+ header('x-power-id: cha');
 echo "更新字段{$duan}成功!";
 }
 break;
@@ -109,7 +135,10 @@ echo "<h3>分享内容(未伪静态)</h3>";
 echo "<textarea>下载网址:{$ihosts}?cx={$infe["filedoma"]}\r\n提取文件名:{$infe["filedoma"]}\r\n提取密码:{$infe["filemama"]}</textarea>";
 echo "<h3>分享内容(已伪静态)</h3>";
 echo "<textarea>下载网址:{$ihosts}{$infe["filedoma"]}\r\n提取文件名:{$infe["filedoma"]}\r\n提取密码:{$infe["filemama"]}</textarea>";
-echo "<h3>伪静态设置(Nginx)</h3>";
+echo "<h3>直接路径(别防下载)</h3>";
+$rurl = rtrim($ihosts,"/")."".ltrim($infe["filepath"],".");
+echo "<textarea>下载网址:{$rurl}\r\n提取文件名:{$infe["filedoma"]}\r\n提取密码:{$infe["filemama"]}</textarea>";
+echo "<h3>Nginx伪静态设置(前一段网址伪静态、后一段文件夹下防下载)</h3>";
 echo "<textarea>$iwei</textarea>";
 break;
 
@@ -126,13 +155,37 @@ $resu = mysqli_query($conn, $sqlc);
 if (!$resu){
 echo "删除出错：".mysqli_error($conn);
 }else{
+header('x-power-id: cha');
 echo "单删{$ider}成功!";
 }
 break;
 
 case "ztai": //修改状态
- $idesc = "修改{$ider}状态";
- webtable("$idesc");
+$ids =(isset($_POST["id"]))?addslashes($_POST["id"]):'';
+if($ids=="" || !is_numeric($ids)) exit("ID传递失败无效");
+$dus =(isset($_POST["duen"]))?addslashes($_POST["duen"]):'';
+$row = readbiao("chalide_share",$idas,$ids);
+if(!$row) exit("读取{$biao}:{$ids}信息失败!");
+$domas = $row["filedoma"]; $check = $row["chacheck"];
+if($c[$biao][$dus]){
+$ival = doxuan($c[$biao][$dus],"nval".$ids,$check);
+}else{
+$ival ="<input name=\"nval{$ids}\" type=\"text\" id=\"nval{$ids}\" value=\"{$check}\" />";
+}
+echo <<<EOT
+<input type="hidden" id="idid{$ids}" value="{$ids}" />
+<input type="hidden" id="oval{$ids}" value="{$check}" />
+<input type="hidden" id="duan{$ids}" value="{$dus}" />
+<table cellspacing="0" class="taba">
+<caption>$domas</caption>
+<tr><td width='80'>当前</td><td>$check</td></tr>
+<tr><td>修改为</td><td>$ival</td></tr>
+<tr><td>&nbsp;</td><td><input value="提交" type="submit" class="txtt"  onclick="duan('dgai','$ids')" />
+<input name="S" type="submit" value="刷新" onclick="ztai($ids,'ztai','$dus');">
+</td></tr>
+</table>
+<div id="tone"></div>
+EOT;
 break;
 
 case "cha":
@@ -170,9 +223,9 @@ foreach ($result as $i=>$row) {
 $liid = $row[$idas]; //得有ID字段
 echo "\r\n<!--".$row["filepath"]."-->\r\n";
 $row["guanli"] = "<a href='#' onclick=\"more($liid,'more');\">改</a>&nbsp;";
-$row["guanli"] .= "<a href='#' onclick=\"more($liid,'dels');\">删</a>&nbsp;";
+$row["guanli"] .= "<a href='#' onclick=\"more($liid,'dels','alert');\">删</a>&nbsp;";
 $row["guanli"] .= "<a href='#' onclick=\"more($liid,'sare');\">下</a>";
-//$row["chacheck"] .= "&nbsp;<a href='#' onclick=\"more($liid,'ztai');\">改</a>";
+$row["chacheck"] = $row["chacheck"]."<br><button onclick=\"ztai($liid,'ztai','chacheck');\">选</button>";
 if(file_exists($row["filepath"])){$row["filepath"]="OK"; }else{$row["filepath"]="不存在";}
 if(!$isti){
 echo "<tr class='tt'>\r\n<th>".join("</th>\r\n<th>",array_keys($row))."</th>\r\n</tr>\r\n";
@@ -181,7 +234,7 @@ $isti="Y";
  echo "<tr>\r\n<td>".join("</td>\r\n<td>",$row)."</td>\r\n</tr>\r\n";
 }
 echo "</table>";
-echo "<p>结果 $count, 页数 $pagecount \r\n &nbsp;&nbsp;&nbsp;&nbsp;";
+echo "<p>结果: $count, 页数: $pagecount \r\n";
 if ($page > 1) { echo "<a href='#' onclick=\"show(1,'');\">首页</a> ";}
 for ($i = 1; $i <= $pagecount; $i++) {
  if($i == $page){ echo "$i ";}else{ echo "<a href='#' onclick=\"show($i,'');\">$i</a> ";}
@@ -228,7 +281,8 @@ button:hover{background-color:green;color:white;}
 .content{background-color:#fff;padding:10px;min-height:360px;margin-bottom:88px;overflow-x:auto;}
 input[type=text]{margin:1px 0;height:28px;width:calc(99% - 80px);border:1px solid #ccc;}
 input[type=submit]{margin:1px 0;padding:1px 2px;height:28px;color:white;background:#0180CF;}
-.description{font-weight:bold;margin-bottom:10px;}
+  select{margin:1px 0;height:28px;width:calc(99% - 80px);border:1px solid #ccc;}
+.description{font-weight:bold;margin-bottom:10px;border-radius:3px;}
 table{width:100%;border-collapse:collapse;}
 table td,table th{padding:5px 0;border:1px solid #ccc;}
 table th{background-color:#ddd;font-weight:bold;}
@@ -239,9 +293,9 @@ footer{display:flex;justify-content:space-between;font-size:12px;align-items:cen
 textarea{width:calc(99.7% - 20px);height:8vh;}
 .modal{display:none;margin:0 auto;padding-top:40px;position:fixed;top:0px;width:100%;height:100%;}
 .modal{z-index:3;overflow:auto;background-color:rgba(0,0,0,0.4);}
-.mainc{display:none;width:calc(99.7% - 20px);margin:0 auto;background-color:#fff;}
+.mainc{display:none;width:calc(99.7% - 20px);border-radius:3px;margin:0 auto;background-color:#fff;}
 .mainc{position:fixed;left:10px;top:10px;min-height:79vh;z-index:8;}
-#tiper{margin:0 auto;width:calc(99.7% - 20px);min-width:299px;min-height:77vh;overflow:auto;padding:8px;}
+#tiper{margin:0 auto;width:calc(99.7% - 20px);border-radius:3px;min-width:299px;min-height:77vh;overflow:auto;padding:8px;}
 .close{text-decoration:none;float:right;font-size:24px;background-color:red;color:white;}
 .close:hover,.close:focus{cursor:pointer;}
 @media screen and (max-width:656px){.search select,.search input,.search captcha,.search button{display:block;width:99.9%;}
@@ -330,22 +384,31 @@ $('mainc').style.display='none';
 $('bg').style.display='none';
 }
 
-/*
-if(GetText.indexOf('<!--tips-->')!=-1){
-$('tiper').innerHTML=GetText;tips();
-}else if(GetText.indexOf('<!--list-->')!=-1){
-}else if(GetText.indexOf('<!--lise-->')!=-1){
-}else{
-alert(GetText);
+function ztai(id,key,duan){
+var fd = new FormData();
+fd.append('id',id);
+fd.append('biao',$("biao").value);
+fd.append('duen',duan);
+post(key, fd, 'tiper');
 }
-*/
-
-function more(id,key){
+function duan(key,id){
+if($("oval"+id).value==$("nval"+id).value){
+alert("未提交：提交值无变动!"); return false;
+}
+var fd = new FormData();
+fd.append('oval',$("oval"+id).value);
+fd.append('nval',$("nval"+id).value);
+fd.append('duan',$("duan"+id).value);
+fd.append('idid',$("idid"+id).value);
+fd.append('biao',$("biao").value);
+post(key, fd, 'alert');
+}
+function more(id,key,tper="tiper"){
 var fd = new FormData();
 fd.append('id',id);
 var act = key; 
-post(act, fd, 'tiper');
-tips();
+post(act, fd, tper);
+//tips();
 }
 function adit(iir) {
 $("a"+iir+"_2").innerHTML = $("a"+iir+"_4").innerHTML;
@@ -364,7 +427,7 @@ post(act, fd, 'alert');
 show(1,'');
 }
 function show(page,key){
-$("page").value = page;
+if(page!= "") $("page").value = page;
 if(key != "") $("rame").value = key;
 var fd = new FormData();
 fd.append('rame',$("rame").value);
@@ -378,15 +441,21 @@ var act = $("Act").value;
 post(act,fd,'UpTip');
 }
 function post(act,fd,hid){
+var cType = "";
 var xhr = new XMLHttpRequest();
 xhr.onreadystatechange = function(){
 if(xhr.readyState == 4){
 if(xhr.status == 200){
+cType = xhr.getResponseHeader('x-power-id');
 if(hid == "alert"){ alert(xhr.responseText);}else{$(hid).innerHTML=xhr.responseText;}
+if(cType == "cha"){ show("","");}
+if(cType == "shua"){window.location.replace("?t="+Math.random());}
 }
 }
 };
-xhr.open('POST','?Act='+ act,true);
+if(hid == "tiper"){ tips();}
+
+xhr.open('POST','?Act='+ act + '&vi='+Math.random(),true);
 xhr.send(fd);
 }
 </script>
